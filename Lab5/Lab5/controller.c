@@ -72,21 +72,39 @@ void openSouth(TC *self, int val) {
  
 void controlling(TC *self) {
 	int time = 0;
-	if(self->bridgeClear == 0) {
-		if(self->queues[0] >= self->queues[1]) {
-			if(self->queues[0] > 0){
-				time = 5 * self->queues[0] + self->queues[0] + 1;
-				openNorth(self, time);
-			}
-		} else {
-			if(self->queues[1] > 0){
-				time = 5 * self->queues[1] + self->queues[1] + 1;
-				openSouth(self, time);
-			}
-		}	
+	if(self->onBridge == 0) {
+		if(self->bridgeClear == 0) {
+			if(self->queues[0] >= self->queues[1]) {
+				if(self->queues[0] > 0 && self->northLast == 0){
+					time = self->queues[0];
+					self->northLast = 1;
+					self->southLast = 0;
+					openNorth(self, time);
+				}
+			} else if(self->queues[1] >= self->queues[0]) {
+				if(self->queues[1] > 0 && self->southLast == 0){
+					time = self->queues[1];
+					self->southLast = 1;
+					self->northLast = 0;
+					openSouth(self, time);
+				}
+			} else if(self->queues[1] == 0 && self->queues[0] > 0) {
+					time = self->queues[0];
+					self->northLast = 1;
+					self->southLast = 0;
+					openNorth(self, time);
+			} else {
+					time = self->queues[1];
+					self->southLast = 1;
+					self->northLast = 0;
+					openSouth(self, time);
+			}				
+		}		
 	}
 	AFTER(MSEC(500), self, controlling, 0);//Keep running function with 0.5s intervals
 }
+
+//FINAL BURST: Make sure the function above opens the correct side. Try to alternate sides to make it fair, if one is 0 open the other (if that is not 0) ETC 
 
 void startup(TC *self) {
 		ASYNC(&(self->display[0]), updateDisplay, self->queues[0]);

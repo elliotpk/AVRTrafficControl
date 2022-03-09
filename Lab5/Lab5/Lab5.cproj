@@ -36,12 +36,12 @@
   <documentation help="" />
   <offline-documentation help="" />
   <dependencies>
-    <content-extension eid="atmel.asf" uuidref="Atmel.ASF" version="3.39.0" />
+    <content-extension eid="atmel.asf" uuidref="Atmel.ASF" version="3.42.0" />
   </dependencies>
 </framework-data>
     </AsfFrameworkConfig>
     <avrtool>com.atmel.avrdbg.tool.atmelice</avrtool>
-    <avrtoolserialnumber>J41800121987</avrtoolserialnumber>
+    <avrtoolserialnumber>J41800120680</avrtoolserialnumber>
     <avrdeviceexpectedsignature>0x1E9405</avrdeviceexpectedsignature>
     <com_atmel_avrdbg_tool_atmelice>
       <ToolOptions>
@@ -51,7 +51,7 @@
         <InterfaceName>JTAG</InterfaceName>
       </ToolOptions>
       <ToolType>com.atmel.avrdbg.tool.atmelice</ToolType>
-      <ToolNumber>J41800121987</ToolNumber>
+      <ToolNumber>J41800120680</ToolNumber>
       <ToolName>Atmel-ICE</ToolName>
     </com_atmel_avrdbg_tool_atmelice>
     <avrtoolinterface>JTAG</avrtoolinterface>

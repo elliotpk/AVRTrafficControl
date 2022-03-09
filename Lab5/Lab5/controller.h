@@ -18,8 +18,10 @@ typedef struct {
 	int queues[2];		//{north, south}
 	int onBridge;
 	int bridgeClear;
+	int northLast;
+	int southLast;
 } TC;
-#define initTC(l1, l2) {initObject(), {initGUI(4), initGUI(2), initGUI(0)}, {l1, l2}, {0, 0}, 0, 0}
+#define initTC(l1, l2) {initObject(), {initGUI(4), initGUI(2), initGUI(0)}, {l1, l2}, {0, 0}, 0, 0, 0, 0}
 void addCar(TC *self, int val);
 void removeCar(TC *self, int val);
 void entry(TC *self, int val);
