@@ -27,6 +27,7 @@ void removeCar(TC *self, int val);
 void entry(TC *self, int val);
 void removeEntry(TC *self);
 void closeRoad(TC *self, int val);
+void clearBridge(TC *self);
 void openNorth(TC *self, int val);
 void openSouth(TC *self, int val);
 void controlling(TC *self);

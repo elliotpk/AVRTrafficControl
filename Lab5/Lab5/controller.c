@@ -38,23 +38,12 @@ void removeEntry(TC *self) {
 	ASYNC(&(self->display[1]), updateDisplay, self->onBridge);
 }
 
-/* void openRoad(TC *self, int val) {
-	int closetime = 0;
-	if(self->bridgeClear!=0) {
-		return;
-	}
-	self->bridgeClear = 1;
-	closetime = 5*self->queues[val];
-	ASYNC(self->lights[val], green, 0);
-	if(self->queues[val] > 0) {
-		AFTER(SEC(closetime), self, closeRoad, val);
-	} else {
-		closeRoad(self, 0);
-	}
-} */
-
 void closeRoad(TC *self, int val) {
 	ASYNC(self->lights[val], red, 0);
+	AFTER(SEC(1), self, clearBridge, 0);	// Adds 1 second of full red time before letting cars through again.
+}
+
+void clearBridge(TC *self) {
 	self->bridgeClear = 0;
 }
  
@@ -72,39 +61,44 @@ void openSouth(TC *self, int val) {
  
 void controlling(TC *self) {
 	int time = 0;
-	if(self->onBridge == 0) {
-		if(self->bridgeClear == 0) {
-			if(self->queues[0] >= self->queues[1]) {
-				if(self->queues[0] > 0 && self->northLast == 0){
-					time = self->queues[0];
-					self->northLast = 1;
-					self->southLast = 0;
-					openNorth(self, time);
-				}
-			} else if(self->queues[1] >= self->queues[0]) {
-				if(self->queues[1] > 0 && self->southLast == 0){
-					time = self->queues[1];
-					self->southLast = 1;
-					self->northLast = 0;
-					openSouth(self, time);
-				}
-			} else if(self->queues[1] == 0 && self->queues[0] > 0) {
-					time = self->queues[0];
-					self->northLast = 1;
-					self->southLast = 0;
-					openNorth(self, time);
-			} else {
-					time = self->queues[1];
-					self->southLast = 1;
-					self->northLast = 0;
-					openSouth(self, time);
-			}				
-		}		
+	
+	if(self->onBridge == 0 && self->bridgeClear == 0) { 			// Safety check to make sure nothing is occupying the bridge (and the extra 1 second time has passed "bridgeClear")
+		if(self->queues[0] == 0 && self->queues[1] > 0) {			// If one side has 0 cars while the other one has a queue open the corresponding side 
+			time = self->queues[1];									// no matter which side opened last time
+			self->northLast = 0;
+			self->southLast = 1;
+			openSouth(self, time);
+		} else if(self->queues[1] == 0 && self->queues[0] > 0) {
+			time = self->queues[0];
+			self->northLast = 1;
+			self->southLast = 0;
+			openNorth(self, time);
+		} else if(self->northLast == 0){							// Alternate opening north and sound sides, "fairest" and simplest approach I could come up
+			time = self->queues[0];
+			self->northLast = 1;
+			self->southLast = 0;
+			openNorth(self, time);
+		} else if (self->southLast == 0) {
+			time = self->queues[1];
+			self->northLast = 0;
+			self->southLast = 1;
+			openSouth(self, time);
+		} else {
+			if(self->queues[0] >= self->queues[1] && self->queues[0] > 0) {				// This last "else" would only run on the first bridge opening (or if queues are empty),  
+				time = self->queues[0];													// after which we will have a value of which side opened previously
+				self->northLast = 1;													// Simply the one which has the biggest queue, (north if both are equal)
+				self->southLast = 0;
+				openNorth(self, time);
+			} else if(self->queues[1] >= self->queues[0] && self->queues[1] > 0) {
+				time = self->queues[1];
+				self->northLast = 0;
+				self->southLast = 1;
+				openSouth(self, time);
+			}
+		}
 	}
-	AFTER(MSEC(500), self, controlling, 0);//Keep running function with 0.5s intervals
+	AFTER(MSEC(500), self, controlling, 0);							// Keep running function with 0.5s intervals
 }
-
-//FINAL BURST: Make sure the function above opens the correct side. Try to alternate sides to make it fair, if one is 0 open the other (if that is not 0) ETC 
 
 void startup(TC *self) {
 		ASYNC(&(self->display[0]), updateDisplay, self->queues[0]);

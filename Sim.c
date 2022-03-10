@@ -254,6 +254,9 @@ void* comthread(void) {
 		}
 	}
 	close(Com1);
+	for(int i = 0; i < MAXCARS; i++){	// Hopefully makes sure all threads are closed down so out program closes...
+		pthread_cancel(cars[i]);
+	}
 	pthread_exit(NULL);
 }
 
