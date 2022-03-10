@@ -62,9 +62,9 @@ void writeChar(char ch, int pos) {
 			break;
 	}
 
-	if(pos % 2 == 0) { //Even -> lower nibble
+	if(pos % 2 == 0) {				//Even -> lower nibble
 		mask = 0xF0;
-	} else { //Odd -> upper nibble
+	} else {						//Odd -> upper nibble
 		mask = 0x0F;
 	}
 	
