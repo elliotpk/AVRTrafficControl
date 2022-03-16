@@ -16,6 +16,7 @@
 
 #define MAXCARS 40
 
+//Global vars and corresponding mutexes
 struct bridge{
 	int northQ;
 	int southQ;
@@ -32,20 +33,21 @@ sem_t southMut;
 pthread_mutex_t bridgeMutex;
 pthread_mutex_t comMutex;
 
+//Function used to create thread for each car instance
 void* carthread(void* arg) {
-	pthread_detach(pthread_self);
+	pthread_detach(pthread_self);					//Detach the thread to free up resources after (we don't wait for the threads and join)
 	int transmitData = 0;
 	int pos = (int)arg;
-	sem_t *waiting;
+	sem_t *waiting;									//Save which mutex and side the car is on onto the thread's stack
 	if(pos == NORTH) {
 		waiting = &northMut;
 	} else {
 		waiting = &southMut;
 	}
 
-	sem_wait(waiting);
+	sem_wait(waiting);								//Wait in the semaphore queue for a signal to go
 	pthread_mutex_lock(&bridgeMutex);
-	bridge.onBridge++;
+	bridge.onBridge++;								//Enter bridge by changing the values in struct and signal over com-port that we have a bridge entry
 	if(pos == NORTH) {
 		bridge.northQ--;
 		bridge.stateChanged = 1;
@@ -63,7 +65,7 @@ void* carthread(void* arg) {
 	}
 	pthread_mutex_unlock(&bridgeMutex);
 
-	sleep(1);
+	sleep(1);										//After 1 second wait we want to let another car onto the bridge, unless the light is red.
 	pthread_mutex_lock(&bridgeMutex);
 	if(pos == NORTH) {
 		if(bridge.northLight){
@@ -74,7 +76,7 @@ void* carthread(void* arg) {
 	}
 	pthread_mutex_unlock(&bridgeMutex);
 	
-	sleep(4);
+	sleep(4);										//After an additional 4 seconds the bridge is exited and we can exit the thread
 	pthread_mutex_lock(&bridgeMutex);
 	bridge.onBridge--;
 	bridge.stateChanged = 1;
@@ -82,6 +84,7 @@ void* carthread(void* arg) {
 	pthread_exit(NULL);
 }
 
+//Function which runs the UI thread, simply checks if something has changed and prints out the status from the struct
 void* uithread(void) {
 	while(bridge.enabled) {
 		pthread_mutex_lock (&bridgeMutex);	//Lock the mutex for bridge
@@ -116,17 +119,18 @@ void* uithread(void) {
 	pthread_exit(NULL);
 }
 
+//Function for the communications thread, both com-port and kb input
 void* comthread(void) {
 	pthread_t *cars;
-	cars = calloc(MAXCARS, sizeof(pthread_t));
-	int carindex = 0;
+	cars = calloc(MAXCARS, sizeof(pthread_t));						//Allocate a part of the stack for our car threads, 
+	int carindex = 0;												//would perhaps be nicer to use a work queue of sorts
 	struct termios options;
 	int comRead = 0;
 	int kbRead = 0;
 	int signal = 0;
 	int transmit = 0;
 
-	Com1 = open("/dev/ttyS0", O_RDWR | O_NDELAY);
+	Com1 = open("/dev/ttyS0", O_RDWR | O_NDELAY);					//Initialize and open the com port with the settings specified
 	if(Com1 == -1) {
 		printf("Couldn't open Com1 port\n");
 		bridge.enabled = 0;
@@ -159,6 +163,7 @@ void* comthread(void) {
 	FD_SET(0, &input);		//Keyboard
 	FD_SET(Com1, &input);	//Com1 port
 	
+	//select() loop, checks for inputs and executes on them
 	while(select(4, &input, NULL, NULL, NULL)) {
 		if(carindex >= MAXCARS) carindex = 0;
 
@@ -173,7 +178,7 @@ void* comthread(void) {
 			switch(signal){
 				case 1:		//north green
 					pthread_mutex_lock(&bridgeMutex);
-					if(bridge.northLight == RED) {
+					if(bridge.northLight == RED) {					//Checks to avoid sem_posting multiple times if green light signal is spammed
 						sem_post(&northMut);
 						bridge.northLight = GREEN;
 						bridge.stateChanged = 1;
@@ -255,7 +260,7 @@ void* comthread(void) {
 	}
 	close(Com1);
 	for(int i = 0; i < MAXCARS; i++){	// Hopefully makes sure all threads are closed down so out program closes...
-		pthread_cancel(cars[i]);
+		pthread_cancel(cars[i]);		// might be abit "hacky", would perhaps be better with sig_kill and handlers for it
 	}
 	pthread_exit(NULL);
 }
