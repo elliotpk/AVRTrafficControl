@@ -1,4 +1,4 @@
-# lab5
+# AVR Traffic Controller
 
 This project was made for a course about real-time systems and was the final lab work for that course. 
 
